@@ -34,7 +34,7 @@ flowchart TD
   Reports[Reports and imports] -->|import callback| Home
   Home --> Mode{Data mode}
   Mode -->|guestHiveOnly| Hive[Hive local box]
-  Mode -->|syncedFirestore| Firestore[Firestore users/{uid} collections]
+  Mode -->|syncedFirestore| Firestore["Firestore users/{uid} collections"]
   SignIn[Google sign-in] --> Migration[HiveFirestoreMigrationService]
   Hive --> Migration
   Migration -->|verified| Firestore
