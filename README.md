@@ -107,3 +107,7 @@ This includes editing objects and moving folders (editing folder metadata).
       - Firestore is now used for all reads and writes unless the user signs out
 
 `Data_Mode` saves selected storage mode in SharedPreferance, under `guestHiveOnly` and `syncedFirestore`. `MigrationStateStore` records whether the user's Hive data was succesfully migrated to Firestore. Additionally, a pending user ID is saved if a migration needs to be retried. Stock Pilot only switches to using Firestore once migration is successful.
+
+<img width="1320" height="2868" alt="Simulator Screenshot - iPhone 17 Pro Max - 2026-10-17 at 19 25 03" src="https://github.com/user-attachments/assets/40d4fc8e-96ed-449a-8161-28073e00b3a5" />
+<img width="1320" height="2868" alt="Simulator Screenshot - iPhone 17 Pro Max - 2026-10-17 at 19 24 57" src="https://github.com/user-attachments/assets/8eb89462-f751-4a5e-b376-a479266efa21" />
+<img width="1320" height="2868" alt="Simulator Screenshot - iPhone 17 Pro Max - 2026-10-17 at 19 24 20" src="https://github.com/user-attachments/assets/4211f09b-339c-45f0-8169-e6fd893f8d9c" />
