@@ -183,7 +183,9 @@ class _BackupSyncPageState extends State<BackupSyncPage> {
             .reauthenticateWithPopup(GoogleAuthProvider())
             .timeout(_firebaseOperationTimeout);
       } else {
-        final credential = await _getGoogleCredential();
+        final credential = await _getGoogleCredential(
+          forceFreshSession: true,
+        );
         await currentUser
             .reauthenticateWithCredential(credential)
             .timeout(_firebaseOperationTimeout);
@@ -197,6 +199,22 @@ class _BackupSyncPageState extends State<BackupSyncPage> {
       setState(() => _currentUser = null);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Your account has been deleted.')),
+      );
+    } on GoogleSignInException catch (exception) {
+      debugPrint(
+        'Google reauthentication failed: '
+        '${exception.code}: ${exception.description}',
+      );
+      if (!mounted) return;
+      final wasCancelled = exception.code.toString().contains('canceled');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            wasCancelled
+                ? 'Google reauthentication was canceled.'
+                : 'Google reauthentication failed (${exception.code}).',
+          ),
+        ),
       );
     } on FirebaseAuthException catch (exception) {
       if (!mounted) return;
@@ -224,8 +242,13 @@ class _BackupSyncPageState extends State<BackupSyncPage> {
         .timeout(_firebaseOperationTimeout);
   }
 
-  Future<AuthCredential> _getGoogleCredential() async {
+  Future<AuthCredential> _getGoogleCredential({
+    bool forceFreshSession = false,
+  }) async {
     await (_googleSignInInitialization ??= GoogleSignIn.instance.initialize());
+    if (forceFreshSession) {
+      await GoogleSignIn.instance.signOut();
+    }
     final googleAccount = await GoogleSignIn.instance.authenticate().timeout(
       _signInTimeout,
     );

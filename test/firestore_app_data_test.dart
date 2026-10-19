@@ -124,6 +124,19 @@ void main() {
         ),
     };
 
+    for (final item in items) {
+      await firestore
+          .collection('users')
+          .doc('user-a')
+          .collection('inventory')
+          .doc(item.id)
+          .set(<String, Object?>{
+            'inventoryCount': 3,
+            'soldCount': 1,
+            'variantStock': <String, int>{},
+          });
+    }
+
     await store.save(
       inventory: items,
       orders: <Order>[],
@@ -140,6 +153,84 @@ void main() {
           .docs,
       hasLength(300),
     );
+  });
+
+  test('updates existing inventory in one Firestore write', () async {
+    final firestore = FakeFirebaseFirestore();
+    final store = FirestoreAppDataStore(
+      firestore: firestore,
+      userIdProvider: () => 'user-a',
+    );
+    final item = InventoryItem(
+      'Widget',
+      12,
+      7,
+      2,
+      'WIDGET-01',
+      'inv-1',
+      <Order>[],
+      <Sale>[],
+      'Catalog',
+    );
+    await firestore
+        .collection('users')
+        .doc('user-a')
+        .collection('inventory')
+        .doc(item.id)
+        .set(<String, Object?>{
+          'inventoryCount': 5,
+          'soldCount': 1,
+          'variantStock': <String, int>{},
+        });
+
+    await store.save(
+      inventory: <InventoryItem>[item],
+      orders: <Order>[],
+      sales: <Sale>[],
+      previousQuantities: <String, InventoryQuantitySnapshot>{
+        item.id: const InventoryQuantitySnapshot(
+          inventoryCount: 5,
+          soldCount: 1,
+          variantStock: <String, int>{},
+        ),
+      },
+    );
+
+    final saved = await firestore
+        .collection('users')
+        .doc('user-a')
+        .collection('inventory')
+        .doc(item.id)
+        .get();
+    expect(saved.data()!['inventoryCount'], 7);
+    expect(saved.data()!['soldCount'], 2);
+    expect(saved.data()!['price'], 12);
+  });
+
+  test('deletes records removed from the current app state', () async {
+    final firestore = FakeFirebaseFirestore();
+    final store = FirestoreAppDataStore(
+      firestore: firestore,
+      userIdProvider: () => 'user-a',
+    );
+    final user = firestore.collection('users').doc('user-a');
+    await user
+        .collection('inventory')
+        .doc('stale-item')
+        .set(<String, Object?>{});
+    await user.collection('orders').doc('stale-order').set(<String, Object?>{});
+    await user.collection('sales').doc('stale-sale').set(<String, Object?>{});
+
+    await store.save(
+      inventory: <InventoryItem>[],
+      orders: <Order>[],
+      sales: <Sale>[],
+      previousQuantities: <String, InventoryQuantitySnapshot>{},
+    );
+
+    expect((await user.collection('inventory').get()).docs, isEmpty);
+    expect((await user.collection('orders').get()).docs, isEmpty);
+    expect((await user.collection('sales').get()).docs, isEmpty);
   });
 
   test(

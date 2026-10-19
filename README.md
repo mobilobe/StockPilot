@@ -77,9 +77,10 @@ flowchart TD
     - `HomePage` receives the callback and `_saveData()` runs
       - The order list is updated in Hive/Firestore, and the app reloads the state
 
-- Sale created with FIFO cost layers in `priceBreakdown`
-  - The sale is added to the inventory item
-    - The global `saleList` is updated and saved to Hive/Firestore
+- Sale created from the catalog's **Add Sale** button (`AddSalePage`)
+  - The user sets the sale date and adds items via the catalog list (`SelectInventoryOrderItemsPage`), entering variant, quantity, and unit sale price for each
+    - On submit, `recordSale` (`sale_calculator.dart`) creates one `Sale` per item with FIFO cost layers in `priceBreakdown` and updates stock and sold counts
+      - The global `saleList` is updated and saved to Hive/Firestore
 
 ### Editing Items
 This includes editing objects and moving folders (editing folder metadata).

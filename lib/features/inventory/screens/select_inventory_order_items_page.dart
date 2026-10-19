@@ -26,8 +26,15 @@ class SelectInventoryOrderItemsResult {
 /// Searches inventory and returns the selected item to an order form.
 class SelectInventoryOrderItemsPage extends StatefulWidget {
   final List<InventoryItem> inventoryList;
+  final bool allowCreateNew;
+  final bool showStock;
 
-  const SelectInventoryOrderItemsPage({required this.inventoryList, super.key});
+  const SelectInventoryOrderItemsPage({
+    required this.inventoryList,
+    this.allowCreateNew = true,
+    this.showStock = false,
+    super.key,
+  });
 
   @override
   State<SelectInventoryOrderItemsPage> createState() =>
@@ -109,22 +116,23 @@ class _SelectInventoryOrderItemsPageState
                   ),
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    onPressed: () {
-                      Navigator.pop(
-                        context,
-                        SelectInventoryOrderItemsResult.createNew(),
-                      );
-                    },
-                    icon: const Icon(Icons.add_circle_outline),
-                    label: const Text('Create New Item'),
+              if (widget.allowCreateNew)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        Navigator.pop(
+                          context,
+                          SelectInventoryOrderItemsResult.createNew(),
+                        );
+                      },
+                      icon: const Icon(Icons.add_circle_outline),
+                      label: const Text('Create New Item'),
+                    ),
                   ),
                 ),
-              ),
               const SizedBox(height: 10),
               Expanded(
                 child: filteredItems.isEmpty
@@ -163,7 +171,9 @@ class _SelectInventoryOrderItemsPageState
                                 ),
                               ),
                               subtitle: Text(
-                                'SKU: ${item.sku} • ${item.folder}',
+                                widget.showStock
+                                    ? 'SKU: ${item.sku} • ${item.folder} • ${item.inventoryCount} in stock'
+                                    : 'SKU: ${item.sku} • ${item.folder}',
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),

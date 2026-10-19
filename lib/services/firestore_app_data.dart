@@ -50,6 +50,23 @@ class FirestoreAppDataStore {
 
     final user = _firestore.collection('users').doc(userId);
     final writes = <void Function(WriteBatch)>[];
+    final existingSnapshots = await Future.wait([
+      user.collection('inventory').get(),
+      user.collection('orders').get(),
+      user.collection('sales').get(),
+    ]);
+    final existingInventoryIds = existingSnapshots[0].docs
+        .map((document) => document.id)
+        .toSet();
+    final existingOrderIds = existingSnapshots[1].docs
+        .map((document) => document.id)
+        .toSet();
+    final existingSaleIds = existingSnapshots[2].docs
+        .map((document) => document.id)
+        .toSet();
+    final inventoryIds = inventory.map((item) => item.id).toSet();
+    final orderIds = orders.map((order) => order.id).toSet();
+    final saleIds = sales.map((sale) => sale.id).toSet();
     final saleOwnerIds = <String, String>{
       for (final item in inventory)
         for (final sale in item.salesList) sale.id: item.id,
@@ -62,23 +79,16 @@ class FirestoreAppDataStore {
         continue;
       }
 
-      writes.add(
-        (batch) => batch.set(
-          reference,
-          _inventoryWriteData(item, includeQuantities: false),
-          SetOptions(merge: true),
-        ),
-      );
-      final quantityUpdate = <Object, Object?>{
-        'lastModified': FieldValue.serverTimestamp(),
+      final updateData = <Object, Object?>{
+        ..._inventoryWriteData(item, includeQuantities: false),
       };
       final inventoryDelta = item.inventoryCount - previous.inventoryCount;
       final soldDelta = item.soldCount - previous.soldCount;
       if (inventoryDelta != 0) {
-        quantityUpdate['inventoryCount'] = FieldValue.increment(inventoryDelta);
+        updateData['inventoryCount'] = FieldValue.increment(inventoryDelta);
       }
       if (soldDelta != 0) {
-        quantityUpdate['soldCount'] = FieldValue.increment(soldDelta);
+        updateData['soldCount'] = FieldValue.increment(soldDelta);
       }
       final variantNames = <String>{
         ...previous.variantStock.keys,
@@ -89,13 +99,11 @@ class FirestoreAppDataStore {
             (item.variantStock[variant] ?? 0) -
             (previous.variantStock[variant] ?? 0);
         if (delta != 0) {
-          quantityUpdate[FieldPath(<String>['variantStock', variant])] =
+          updateData[FieldPath(<String>['variantStock', variant])] =
               FieldValue.increment(delta);
         }
       }
-      if (quantityUpdate.length > 1) {
-        writes.add((batch) => batch.update(reference, quantityUpdate));
-      }
+      writes.add((batch) => batch.update(reference, updateData));
     }
 
     for (final order in orders) {
@@ -112,6 +120,22 @@ class FirestoreAppDataStore {
           user.collection('sales').doc(sale.id),
           _saleWriteData(sale, inventoryItemId: saleOwnerIds[sale.id]),
         ),
+      );
+    }
+
+    for (final documentId in existingInventoryIds.difference(inventoryIds)) {
+      writes.add(
+        (batch) => batch.delete(user.collection('inventory').doc(documentId)),
+      );
+    }
+    for (final documentId in existingOrderIds.difference(orderIds)) {
+      writes.add(
+        (batch) => batch.delete(user.collection('orders').doc(documentId)),
+      );
+    }
+    for (final documentId in existingSaleIds.difference(saleIds)) {
+      writes.add(
+        (batch) => batch.delete(user.collection('sales').doc(documentId)),
       );
     }
 

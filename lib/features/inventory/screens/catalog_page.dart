@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:inventory/services/hive_data.dart';
 import 'package:inventory/features/inventory/widgets/inventory_tile.dart';
-import 'package:inventory/features/inventory/widgets/sale_dialog.dart';
 import 'package:inventory/features/inventory/screens/add_inventory_page.dart';
+import 'package:inventory/features/inventory/screens/add_sale_page.dart';
 import 'package:inventory/features/inventory/screens/sales_page.dart';
 import 'package:inventory/models/inventory_item.dart';
 import 'package:inventory/models/sale.dart';
@@ -45,7 +45,6 @@ class _CatalogPageState extends State<CatalogPage> {
 
   final HiveService _hiveService = HiveService();
 
-  bool isInformationMode = true;
   String searchQuery = '';
   String selectedFolder = _allFoldersLabel;
   bool isFolderFilterExpanded = false;
@@ -65,19 +64,6 @@ class _CatalogPageState extends State<CatalogPage> {
             ((entry.value is Map && entry.value['closedByDefault'] == true) ||
             entry.value == true),
     };
-  }
-
-  void _sellItem(InventoryItem item) {
-    showDialog(
-      context: context,
-      builder: (context) => SaleDialog(
-        inventoryItem: item,
-        onSellItem: (saleItem) {
-          setState(() {});
-          widget.onDataChanged();
-        },
-      ),
-    );
   }
 
   void _updateInventoryItem(InventoryItem item) {
@@ -658,50 +644,6 @@ class _CatalogPageState extends State<CatalogPage> {
                         ),
                         child: LayoutBuilder(
                           builder: (context, constraints) {
-                            final isCompact = constraints.maxWidth < 390;
-
-                            final modeToggle = ToggleButtons(
-                              isSelected: [
-                                isInformationMode,
-                                !isInformationMode,
-                              ],
-                              onPressed: (index) {
-                                setState(() {
-                                  isInformationMode = index == 0;
-                                });
-                              },
-                              borderRadius: BorderRadius.circular(8),
-                              constraints: const BoxConstraints(
-                                minHeight: 32,
-                                minWidth: 72,
-                              ),
-                              selectedColor: Colors.white,
-                              fillColor: const Color(0xFF3498DB),
-                              color: const Color(0xFF99A3AC),
-                              borderColor: const Color(0xFFE0E0E0),
-                              selectedBorderColor: const Color(0xFF3498DB),
-                              children: const [
-                                Padding(
-                                  padding: EdgeInsets.symmetric(horizontal: 10),
-                                  child: Text(
-                                    'Info',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                                Padding(
-                                  padding: EdgeInsets.symmetric(horizontal: 10),
-                                  child: Text(
-                                    'Manage',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            );
-
                             final addFolderButton = Material(
                               color: const Color(0xFFF8FAFC),
                               borderRadius: BorderRadius.circular(8),
@@ -832,67 +774,73 @@ class _CatalogPageState extends State<CatalogPage> {
                               ),
                             );
 
-                            final actionButtons = Wrap(
-                              spacing: 8,
-                              runSpacing: 8,
-                              children: [
-                                addFolderButton,
-
-                                salesButton,
-                                addItemButton,
-                              ],
-                            );
-
-                            if (isCompact) {
-                              return Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Wrap(
-                                    spacing: 8,
-                                    runSpacing: 8,
-                                    crossAxisAlignment:
-                                        WrapCrossAlignment.center,
-                                    children: [
-                                      const Text(
-                                        'Mode',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: Color(0xFF99A3AC),
-                                          fontWeight: FontWeight.w600,
+                            final addSaleButton = Container(
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF27AE60),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Material(
+                                color: Colors.transparent,
+                                child: InkWell(
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => AddSalePage(
+                                          inventoryList: widget.inventoryList,
+                                          onSaleAdded: () {
+                                            setState(() {});
+                                            widget.onDataChanged();
+                                          },
                                         ),
                                       ),
-                                      modeToggle,
-                                    ],
+                                    );
+                                  },
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: const Padding(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 9,
+                                      vertical: 8,
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          Icons.shopping_cart,
+                                          color: Colors.white,
+                                          size: 18,
+                                        ),
+                                        SizedBox(width: 3),
+                                        Text(
+                                          'Add Sale',
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                  const SizedBox(height: 8),
-                                  Align(
-                                    alignment: Alignment.centerLeft,
-                                    child: actionButtons,
-                                  ),
-                                ],
-                              );
-                            }
+                                ),
+                              ),
+                            );
 
-                            return Row(
-                              children: [
-                                const Text(
-                                  'Mode',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Color(0xFF99A3AC),
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                modeToggle,
-                                const Spacer(),
-                                Flexible(
-                                  child: Align(
-                                    alignment: Alignment.centerRight,
-                                    child: actionButtons,
-                                  ),
-                                ),
-                              ],
+                            return FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.centerRight,
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  addFolderButton,
+                                  const SizedBox(width: 8),
+                                  salesButton,
+                                  const SizedBox(width: 8),
+                                  addItemButton,
+                                  const SizedBox(width: 8),
+                                  addSaleButton,
+                                ],
+                              ),
                             );
                           },
                         ),
@@ -1189,8 +1137,6 @@ class _CatalogPageState extends State<CatalogPage> {
                                       inventoryItem: item,
                                       allInventoryItems: widget.inventoryList,
                                       allOrders: widget.orderList,
-                                      isInformationMode: isInformationMode,
-                                      onSellItem: _sellItem,
                                       onUpdateInventory: _updateInventoryItem,
                                       onDeleteInventory: _deleteInventoryItem,
                                       onCreateTransferOrder: (transferOrder) {
